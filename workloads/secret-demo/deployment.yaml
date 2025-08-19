@@ -1,0 +1,86 @@
+# Example workload that demonstrates Azure Key Vault integration
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: secret-demo
+  labels:
+    app: secret-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: secret-demo
+  template:
+    metadata:
+      labels:
+        app: secret-demo
+    spec:
+      serviceAccountName: workload-identity-sa
+      containers:
+      - name: secret-demo
+        image: nginx:1.25
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: secrets-store
+          mountPath: "/mnt/secrets"
+          readOnly: true
+        env:
+        - name: SECRET_FILE_PATH
+          value: "/mnt/secrets"
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "250m"
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+      volumes:
+      - name: secrets-store
+        csi:
+          driver: secrets-store.csi.k8s.io
+          readOnly: true
+          volumeAttributes:
+            secretProviderClass: "azure-keyvault-secrets"
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: workload-identity-sa
+  annotations:
+    azure.workload.identity/client-id: "CLIENT_ID_PLACEHOLDER"
+  labels:
+    azure.workload.identity/use: "true"
+---
+apiVersion: secrets-store.csi.x-k8s.io/v1
+kind: SecretProviderClass
+metadata:
+  name: azure-keyvault-secrets
+spec:
+  provider: azure
+  parameters:
+    usePodIdentity: "false"
+    useVMManagedIdentity: "false"
+    clientID: "CLIENT_ID_PLACEHOLDER"
+    keyvaultName: "KEY_VAULT_NAME_PLACEHOLDER"
+    tenantId: "TENANT_ID_PLACEHOLDER"
+    objects: |
+      array:
+        - |
+          objectName: app-secret
+          objectType: secret
+          objectVersion: ""
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: secret-demo-service
+  labels:
+    app: secret-demo
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 80
+  selector:
+    app: secret-demo
