@@ -1,18 +1,51 @@
 # Root Terragrunt configuration to define global variables and configurations
 
+# Reference bootstrap outputs for shared configuration
+dependency "bootstrap" {
+  config_path = "./bootstrap"
+  
+  # Skip outputs during bootstrap phase
+  skip_outputs = true
+  
+  mock_outputs = {
+    deploy_token = "zmock"
+    project_name = "jim-aks-lab"
+    location     = "West US 2"
+    backend_config = {
+      resource_group_name  = "rg-jim-aks-lab-tfstate"
+      storage_account_name = "jimakslabzfstatemock"
+      container_name       = "tfstate"
+    }
+    shared_config = {
+      deploy_token = "zmock"
+      project_name = "jim-aks-lab"
+      location     = "West US 2"
+      common_tags = {
+        project       = "aks-lab"
+        managed_by    = "terraform"
+        test-scenario = "manual"
+      }
+    }
+  }
+}
+
 locals {
+  # Get shared configuration from bootstrap
+  bootstrap_config = try(dependency.bootstrap.outputs.shared_config, dependency.bootstrap.mock_outputs.shared_config)
+  backend_config   = try(dependency.bootstrap.outputs.backend_config, dependency.bootstrap.mock_outputs.backend_config)
+  
   # Common tags applied to all resources
-  common_tags = {
-    project     = "aks-lab"
+  common_tags = merge(local.bootstrap_config.common_tags, {
     environment = "dev"
     managed_by  = "terragrunt"
-  }
+  })
 
   # Azure region for deployment
-  azure_region = "West US 2"
+  azure_region = local.bootstrap_config.location
   
-  # Resource naming convention
-  project_name = "jim-aks-lab"
+  # Resource naming convention with shared deploy_token
+  project_name = local.bootstrap_config.project_name
+  deploy_token = local.bootstrap_config.deploy_token
 }
 
 # Configure Terragrunt to automatically store tfstate files in Azure Storage
@@ -25,11 +58,10 @@ remote_state {
   }
   
   config = {
-    # Storage account details will be provided via environment variables or CLI
-    # AZURE_STORAGE_ACCOUNT, AZURE_STORAGE_KEY, etc.
-    resource_group_name  = "rg-${local.project_name}-tfstate"
-    storage_account_name = "st${replace(local.project_name, "-", "")}tfstate"
-    container_name       = "tfstate"
+    # Use backend configuration from bootstrap
+    resource_group_name  = local.backend_config.resource_group_name
+    storage_account_name = local.backend_config.storage_account_name
+    container_name       = local.backend_config.container_name
     key                  = "${path_relative_to_include()}/terraform.tfstate"
   }
 }

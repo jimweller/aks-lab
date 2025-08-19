@@ -21,6 +21,11 @@ This lab provides a modular approach to deploying and experimenting with AKS clu
 ```
 aks-lab/
 ├── terragrunt.hcl          # Root Terragrunt configuration
+├── bootstrap/              # Bootstrap infrastructure for Terraform state
+│   ├── main.tf            # Storage account for Terraform state
+│   ├── variables.tf       # Bootstrap configuration variables
+│   ├── outputs.tf         # Bootstrap outputs
+│   └── README.md          # Bootstrap usage instructions
 ├── modules/                # Reusable Terraform modules
 │   ├── networking/         # VNet, subnets, NSGs
 │   ├── aks-cluster/        # AKS cluster with managed identity
@@ -67,26 +72,33 @@ aks-lab/
 
 ## Quick Start
 
-### 1. Configure Backend Storage
+### 1. Bootstrap Backend Infrastructure
 
-First, create a storage account for Terraform state:
+First, deploy the Terraform state storage infrastructure using the bootstrap configuration:
 
 ```bash
-# Create resource group for Terraform state
-az group create --name rg-aks-lab-tfstate --location "East US"
+# Navigate to bootstrap directory
+cd bootstrap
 
-# Create storage account
-az storage account create \
-  --name stakslabakstfstate \
-  --resource-group rg-aks-lab-tfstate \
-  --location "East US" \
-  --sku Standard_LRS
+# Initialize Terraform
+terraform init
 
-# Create storage container
-az storage container create \
-  --name tfstate \
-  --account-name stakslabakstfstate
+# Review the planned changes
+terraform plan
+
+# Deploy the storage infrastructure
+terraform apply
+
+# Note the storage account name and other outputs
+terraform output
 ```
+
+The bootstrap process creates:
+- Resource Group for Terraform state storage
+- Storage Account with versioning and security features
+- Storage Container for state files
+
+**Important**: Save the `storage_account_name` output as you'll need it for the Terragrunt backend configuration.
 
 ### 2. Deploy Infrastructure
 

@@ -1,0 +1,28 @@
+# Example Terraform variables file for bootstrap configuration
+# Copy this file to terraform.tfvars and customize as needed
+
+# Project name used for resource naming
+project_name = "my-aks-lab"
+
+# Azure region where resources will be created
+location = "East US"
+
+# Deployment token for unique resource naming
+# If set to null, a random token will be generated
+# If set to a value, that exact value will be used
+deploy_token = null  # Will generate random token like "z1a2b"
+# deploy_token = "prod01"  # Use specific token
+
+# Resource group name for Terraform state storage
+tfstate_resource_group_name = "rg-my-aks-lab-tfstate"
+
+# Storage container name for Terraform state files
+tfstate_container_name = "tfstate"
+
+# Tags to apply to all resources
+tags = {
+  project    = "aks-lab"
+  managed_by = "terraform"
+  purpose    = "tfstate-backend"
+  owner      = "platform-team"
+}
