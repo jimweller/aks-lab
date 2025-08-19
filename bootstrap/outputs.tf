@@ -47,13 +47,3 @@ output "backend_config" {
     container_name       = azurerm_storage_container.tfstate.name
   }
 }
-
-output "shared_config" {
-  description = "Shared configuration values for use in main Terragrunt configuration"
-  value = {
-    deploy_token = local.deploy_token
-    project_name = var.project_name
-    location     = var.location
-    common_tags  = local.common_tags
-  }
-}

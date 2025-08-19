@@ -23,6 +23,13 @@ resource "random_string" "token" {
   upper   = false
 }
 
+# Generate a random token for unique resource naming
+resource "random_string" "token" {
+  length  = 4
+  special = false
+  upper   = false
+}
+
 # Local values for consistent naming and tagging
 locals {
   deploy_token = var.deploy_token == null ? "z${random_string.token.result}" : var.deploy_token
@@ -67,6 +74,5 @@ resource "azurerm_storage_account" "tfstate" {
 # Create container for Terraform state files
 resource "azurerm_storage_container" "tfstate" {
   name                  = var.tfstate_container_name
-  storage_account_name  = azurerm_storage_account.tfstate.name
   container_access_type = "private"
 }

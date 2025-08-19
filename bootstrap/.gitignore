@@ -1,0 +1,17 @@
+# Terraform files
+*.tfplan
+*.tfplan.*
+.terraform/
+.terraform.lock.hcl
+
+# Terraform state files - UNCOMMENT to ignore bootstrap state
+# Comment out these lines if you want to commit bootstrap state to version control
+# terraform.tfstate
+# terraform.tfstate.*
+
+# Backup files
+*.backup
+
+# Variable files that might contain secrets
+terraform.tfvars
+*.auto.tfvars

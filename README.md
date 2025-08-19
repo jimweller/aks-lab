@@ -91,6 +91,14 @@ terraform apply
 
 # Note the storage account name and other outputs
 terraform output
+
+# Backup bootstrap state to storage account (recommended for teams)
+STORAGE_ACCOUNT_NAME=$(terraform output -raw storage_account_name)
+az storage blob upload \
+  --account-name $STORAGE_ACCOUNT_NAME \
+  --container-name tfstate \
+  --name bootstrap/terraform.tfstate \
+  --file terraform.tfstate
 ```
 
 The bootstrap process creates:
@@ -98,9 +106,28 @@ The bootstrap process creates:
 - Storage Account with versioning and security features
 - Storage Container for state files
 
-**Important**: Save the `storage_account_name` output as you'll need it for the Terragrunt backend configuration.
+**Important Notes:**
+1. The bootstrap Terraform state is stored locally in `bootstrap/terraform.tfstate`
+2. A backup copy is stored in the storage account at `bootstrap/terraform.tfstate` for team access
+3. You need to update the main `terragrunt.hcl` with the storage account name from bootstrap output
 
-### 2. Deploy Infrastructure
+### 2. Update Backend Configuration
+
+After bootstrap completes, update the storage account name in the root `terragrunt.hcl`:
+
+```bash
+# Get the storage account name from bootstrap output
+cd bootstrap
+STORAGE_ACCOUNT_NAME=$(terraform output -raw storage_account_name)
+echo "Update terragrunt.hcl with: $STORAGE_ACCOUNT_NAME"
+
+# Go back to root and update terragrunt.hcl
+cd ..
+# Replace REPLACE_WITH_BOOTSTRAP_OUTPUT with the actual storage account name
+sed -i "s/REPLACE_WITH_BOOTSTRAP_OUTPUT/$STORAGE_ACCOUNT_NAME/g" terragrunt.hcl
+```
+
+### 3. Deploy Infrastructure
 
 Deploy components in order due to dependencies:
 
@@ -121,7 +148,7 @@ terragrunt plan
 terragrunt apply
 ```
 
-### 3. Connect to Cluster
+### 4. Connect to Cluster
 
 ```bash
 # Get cluster credentials
@@ -216,5 +243,18 @@ To completely clean up:
 cd live/dev
 terragrunt run-all destroy
 
-# Remove the Terraform state storage (optional)
-az group delete --name rg-aks-lab-tfstate --yes --no-wait
+# Destroy the bootstrap infrastructure (optional)
+cd ../../bootstrap
+terraform destroy
+
+# Note: The bootstrap terraform.tfstate file will remain locally
+# Remove manually if desired, or commit to version control for team use
+```
+
+### Bootstrap State Management
+
+The bootstrap state (`bootstrap/terraform.tfstate`) contains metadata about the storage account and shared configuration. Consider:
+
+- **Keep it**: For redeploying the same infrastructure with consistent naming
+- **Commit it**: For team environments where multiple people need access
+- **Delete it**: Only if you're completely done with the project and resources are destroyed
