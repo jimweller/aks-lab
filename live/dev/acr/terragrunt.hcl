@@ -1,17 +1,17 @@
-# Include all settings from the root terragrunt.hcl file
+# Include root configuration
 include "root" {
-  path = find_in_parent_folders()
-}
-
-# Include environment-specific settings
-include "env" {
-  path   = find_in_parent_folders("terragrunt.hcl")
-  expose = true
+  path = find_in_parent_folders("root.hcl")
 }
 
 # Specify the Terraform module to use
 terraform {
   source = "../../../modules/acr"
+}
+
+# Local configuration that reads from parent configs
+locals {
+  # Read configurations for DRY principle
+  env_vars = read_terragrunt_config("../terragrunt.hcl")
 }
 
 # Define dependencies
@@ -20,28 +20,24 @@ dependency "networking" {
   
   mock_outputs = {
     resource_group_name = "mock-rg"
-    location           = "East US"
+    location           = "West US 2"
   }
 }
 
-# Input values for the ACR module
+# Input values for the ACR module (only ACR-specific config)
 inputs = {
-  acr_name            = include.env.locals.acr_name
+  # Use shared naming conventions from environment level
+  acr_name            = local.env_vars.locals.acr_name
   resource_group_name = dependency.networking.outputs.resource_group_name
   location           = dependency.networking.outputs.location
-  tags               = include.env.locals.common_tags
+  tags               = local.env_vars.locals.env_tags
 
-  # ACR configuration
+  # ACR-specific configuration (unique to ACR component)
   acr_sku        = "Basic"
   admin_enabled  = false
 
   # Security settings
   public_network_access_enabled = true
-  network_rule_set_enabled      = false
-  retention_policy_enabled      = false
-  trust_policy_enabled          = false
-  quarantine_policy_enabled     = false
-  export_policy_enabled         = true
 
   # Private endpoint (disabled for basic lab)
   enable_private_endpoint = false

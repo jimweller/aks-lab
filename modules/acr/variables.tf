@@ -41,63 +41,9 @@ variable "public_network_access_enabled" {
   default     = true
 }
 
-variable "network_rule_set_enabled" {
-  description = "Enable network rule set for ACR"
-  type        = bool
-  default     = false
-}
-
-variable "network_rule_default_action" {
-  description = "Default action for network rule set"
-  type        = string
-  default     = "Allow"
-  validation {
-    condition     = contains(["Allow", "Deny"], var.network_rule_default_action)
-    error_message = "Network rule default action must be Allow or Deny."
-  }
-}
-
-variable "allowed_ip_ranges" {
-  description = "List of allowed IP ranges for ACR access"
-  type        = list(string)
-  default     = []
-}
-
-variable "allowed_subnet_ids" {
-  description = "List of allowed subnet IDs for ACR access"
-  type        = list(string)
-  default     = []
-}
-
-variable "retention_policy_enabled" {
-  description = "Enable retention policy for untagged manifests"
-  type        = bool
-  default     = false
-}
-
-variable "retention_policy_days" {
-  description = "Number of days to retain untagged manifests"
-  type        = number
-  default     = 7
-}
-
-variable "trust_policy_enabled" {
-  description = "Enable trust policy for content trust"
-  type        = bool
-  default     = false
-}
-
-variable "quarantine_policy_enabled" {
-  description = "Enable quarantine policy for vulnerability scanning"
-  type        = bool
-  default     = false
-}
-
-variable "export_policy_enabled" {
-  description = "Enable export policy"
-  type        = bool
-  default     = true
-}
+# Note: network_rule_set, retention_policy, trust_policy, quarantine_policy,
+# and export_policy variables have been removed as these features are either
+# no longer supported or incompatible with azurerm provider v4.0
 
 variable "identity_type" {
   description = "Type of managed identity"

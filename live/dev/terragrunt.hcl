@@ -1,50 +1,23 @@
-# Include all settings from the root terragrunt.hcl file
+# Include root configuration
 include "root" {
-  path = find_in_parent_folders()
+  path = find_in_parent_folders("root.hcl")
 }
 
-# Include all settings from the root terragrunt.hcl file
-include "root" {
-  path = find_in_parent_folders()
-}
-
-# Generate deploy token unique to this environment - consistent across runs
-generate "deploy_token" {
-  path = "deploy_token.tf"
-  if_exists = "overwrite_terragrunt"
-  contents = <<EOF
-resource "random_string" "deploy_token" {
-  length  = 4
-  special = false
-  upper   = false
-}
-
-output "deploy_token" {
-  value = "z$${random_string.deploy_token.result}"
-}
-EOF
-}
-
-# Environment-specific variables
+# Environment-specific locals
 locals {
   environment = "dev"
-  region      = "East US"
   
-  # Deploy token: generated once, then consistent across all runs
-  deploy_token = "z${random_string.deploy_token.result}"
+  # Read root configuration for shared values
+  root_vars = read_terragrunt_config(find_in_parent_folders("root.hcl"))
   
-  # Common tags for all resources in this environment
-  common_tags = {
-    project     = "aks-lab"
+  # Naming conventions using root locals
+  resource_group_name = "rg-aks-lab-${local.environment}-${local.root_vars.locals.deploy_token}"
+  cluster_name        = "aks-cluster-${local.environment}-${local.root_vars.locals.deploy_token}"
+  acr_name            = "akslabregistry${local.environment}${local.root_vars.locals.deploy_token}"
+  vnet_name           = "aks-vnet-${local.environment}-${local.root_vars.locals.deploy_token}"
+  
+  # Environment-specific tags (merged with root tags)
+  env_tags = merge(local.root_vars.locals.common_tags, {
     environment = local.environment
-    managed_by  = "terragrunt"
-    owner       = "platform-team"
-    deploy_token = local.deploy_token
-  }
-
-  # Naming conventions: RESOURCE-dev-key pattern
-  resource_group_name = "rg-aks-lab-${local.environment}-${local.deploy_token}"
-  cluster_name        = "aks-cluster-${local.environment}-${local.deploy_token}"
-  acr_name            = "akslabregistry${local.environment}${local.deploy_token}"
-  vnet_name           = "aks-vnet-${local.environment}-${local.deploy_token}"
+  })
 }

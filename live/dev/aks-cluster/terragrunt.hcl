@@ -1,17 +1,17 @@
-# Include all settings from the root terragrunt.hcl file
+# Include root configuration
 include "root" {
-  path = find_in_parent_folders()
-}
-
-# Include environment-specific settings
-include "env" {
-  path   = find_in_parent_folders("terragrunt.hcl")
-  expose = true
+  path = find_in_parent_folders("root.hcl")
 }
 
 # Specify the Terraform module to use
 terraform {
   source = "../../../modules/aks-cluster"
+}
+
+# Local configuration that reads from parent configs
+locals {
+  # Read configurations for DRY principle
+  env_vars = read_terragrunt_config("../terragrunt.hcl")
 }
 
 # Define dependencies
@@ -20,7 +20,7 @@ dependency "networking" {
   
   mock_outputs = {
     resource_group_name = "mock-rg"
-    location           = "East US"
+    location           = "West US 2"
     aks_subnet_id      = "/subscriptions/mock/resourceGroups/mock-rg/providers/Microsoft.Network/virtualNetworks/mock-vnet/subnets/mock-subnet"
   }
 }
@@ -33,17 +33,18 @@ dependency "acr" {
   }
 }
 
-# Input values for the AKS cluster module
+# Input values for the AKS cluster module (only AKS-specific config)
 inputs = {
-  cluster_name        = include.env.locals.cluster_name
+  # Use shared naming conventions from environment level
+  cluster_name        = local.env_vars.locals.cluster_name
   resource_group_name = dependency.networking.outputs.resource_group_name
   location           = dependency.networking.outputs.location
   subnet_id          = dependency.networking.outputs.aks_subnet_id
   acr_id             = dependency.acr.outputs.acr_id
-  tags               = include.env.locals.common_tags
+  tags               = local.env_vars.locals.env_tags
 
-  # DNS and Kubernetes version
-  dns_prefix         = "aks-${include.env.locals.environment}-${include.env.locals.deploy_token}"
+  # AKS-specific configuration (unique to AKS component)
+  dns_prefix         = "aks-${local.env_vars.locals.environment}-${local.env_vars.locals.root_vars.locals.deploy_token}"
   kubernetes_version = null  # Use latest stable version
 
   # Default node pool configuration
