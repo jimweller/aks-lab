@@ -1,4 +1,4 @@
-output "storage_account_name" {
+output "name" {
   description = "Name of the storage account for Terraform state"
   value       = azurerm_storage_account.tfstate.name
 }
@@ -43,7 +43,7 @@ output "backend_config" {
   description = "Backend configuration for Terragrunt"
   value = {
     resource_group_name  = azurerm_resource_group.tfstate.name
-    storage_account_name = azurerm_storage_account.tfstate.name
+    name = azurerm_storage_account.tfstate.name
     container_name       = azurerm_storage_container.tfstate.name
   }
 }

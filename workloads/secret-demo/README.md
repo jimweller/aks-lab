@@ -51,3 +51,4 @@ kubectl exec -it deployment/secret-demo -- cat /mnt/secrets/app-secret
 
 ```bash
 kubectl delete -f deployment.yaml
+

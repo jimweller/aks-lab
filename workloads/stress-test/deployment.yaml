@@ -1,0 +1,84 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stress-test
+  labels:
+    app: stress-test
+spec:
+  replicas: 1  # Start with 1, scale manually to trigger autoscaling
+  selector:
+    matchLabels:
+      app: stress-test
+  template:
+    metadata:
+      labels:
+        app: stress-test
+    spec:
+      containers:
+      - name: stress-test
+        image: colinianking/stress-ng:latest
+        imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            cpu: "1000m"      # Request 1 full CPU core
+            memory: "1024Mi"  # Request 1GB memory
+          limits:
+            cpu: "1000m"      # Limit to 1 CPU core
+            memory: "1024Mi"  # Limit to 1GB memory
+        command: ["stress-ng"]
+        args:
+          - "--cpu"
+          - "1"           # Stress 1 CPU core
+          - "--vm"
+          - "1"           # Stress virtual memory
+          - "--vm-keep"   # Keep memory allocated
+          - "--timeout"
+          - "300s"        # Run for 5 minutes
+          - "--verbose"   # Show verbose output
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: stress-test-service
+  labels:
+    app: stress-test
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 8080
+    name: http
+  selector:
+    app: stress-test
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: stress-test-hpa
+  labels:
+    app: stress-test
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: stress-test
+  minReplicas: 1
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 50  # Scale when CPU > 50%
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 70  # Scale when memory > 70%
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300  # Wait 5 minutes before scaling down
+    scaleUp:
+      stabilizationWindowSeconds: 60   # Wait 1 minute before scaling up

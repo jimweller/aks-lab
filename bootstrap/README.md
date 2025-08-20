@@ -5,6 +5,7 @@ This directory contains Terraform configuration to provision the Azure Storage A
 ## Purpose
 
 The bootstrap infrastructure creates:
+
 - Resource Group for Terraform state storage
 - Storage Account with versioning and security features enabled
 - Storage Container for state files
@@ -13,28 +14,28 @@ The bootstrap infrastructure creates:
 ## Prerequisites
 
 - Azure CLI installed and authenticated (`az login`)
-- Terraform installed (>= 1.0)
+- OpenTofu installed (>= 1.0)
 - Appropriate Azure permissions to create Resource Groups and Storage Accounts
 
 ## Usage
 
-### 1. Initialize Terraform
+### 1. Initialize OpenTofu
 
 ```bash
 cd bootstrap
-terraform init
+tofu init
 ```
 
 ### 2. Plan the deployment
 
 ```bash
-terraform plan
+tofu plan
 ```
 
 ### 3. Apply the configuration
 
 ```bash
-terraform apply
+tofu apply
 ```
 
 ### 4. Note the outputs
@@ -42,7 +43,7 @@ terraform apply
 After successful deployment, note the outputs which will be needed for configuring the main Terragrunt backend:
 
 ```bash
-terraform output
+tofu output
 ```
 
 ### 5. Backup Bootstrap State (Recommended)
@@ -51,8 +52,8 @@ After successful deployment, backup the bootstrap state to the storage account f
 
 ```bash
 # Get the storage account name from terraform output
-STORAGE_ACCOUNT_NAME=$(terraform output -raw storage_account_name)
-RESOURCE_GROUP_NAME=$(terraform output -raw resource_group_name)
+STORAGE_ACCOUNT_NAME=$(tofu output -raw name)
+RESOURCE_GROUP_NAME=$(tofu output -raw resource_group_name)
 
 # Upload bootstrap state to the storage account
 az storage blob upload \
@@ -84,26 +85,28 @@ az storage blob download \
   --file terraform.tfstate
 
 # Verify the restore worked
-terraform show
+tofu show
 ```
 
 ## Bootstrap State Storage
 
-**Important**: The bootstrap Terraform state is stored **locally** in a `terraform.tfstate` file. This is a common pattern for bootstrap configurations because:
+**Important**: The bootstrap OpenTofu state is stored **locally** in a `terraform.tfstate` file. This is a common pattern for bootstrap configurations because:
 
 - The bootstrap creates the remote state storage that other configurations will use
 - It's a "chicken and egg" problem - you need storage to store state, but need state to create storage
 - The bootstrap state is small and changes infrequently
 
-### State Management Options:
+### State Management Options
 
 1. **Local State (Current)** - Simple, suitable for single-person projects
 2. **Version Control** - Commit the `terraform.tfstate` to git (acceptable for small teams)
 3. **Separate Storage** - Use a pre-existing storage account for bootstrap state
 4. **Team Coordination** - Designate one person to manage bootstrap, share outputs
 
-### Recommended Approach:
+### Recommended Approach
+
 For teams, consider committing the bootstrap `terraform.tfstate` to version control since:
+
 - It's small and changes rarely
 - It contains non-sensitive infrastructure metadata
 - It ensures team members can access the same bootstrap state
@@ -128,7 +131,7 @@ The bootstrap uses a `deploy_token` pattern for unique resource naming:
 
 The bootstrap outputs key values needed for the backend configuration:
 
-- `storage_account_name`: Name of the created storage account
+- `name`: Name of the created storage account
 - `deploy_token`: Unique deployment identifier
 - `project_name`: Project name used for naming
 - `location`: Azure region
@@ -141,4 +144,10 @@ You can customize the deployment by creating a `terraform.tfvars` file:
 ```hcl
 project_name = "my-aks-lab"
 location = "East US"
+deploy_token = "prod01"  # Use a specific token instead of random
 tfstate_resource_group_name = "rg-my-aks-lab-tfstate"
+```
+
+## Example Terraform Variables File
+
+See `terraform.tfvars.example` for a complete example of customizable variables.

@@ -43,7 +43,7 @@ inputs = {
   tags               = include.env.locals.common_tags
 
   # DNS and Kubernetes version
-  dns_prefix         = "${include.env.locals.environment}-aks"
+  dns_prefix         = "aks-${include.env.locals.environment}-${include.env.locals.deploy_token}"
   kubernetes_version = null  # Use latest stable version
 
   # Default node pool configuration

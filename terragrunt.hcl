@@ -4,7 +4,6 @@ locals {
   # Common tags applied to all resources
   common_tags = {
     project     = "aks-lab"
-    environment = "dev"
     managed_by  = "terragrunt"
   }
 
@@ -25,9 +24,9 @@ remote_state {
   }
   
   config = {
-    # Update these values after running bootstrap
+    # Backend storage is shared across environments
     resource_group_name  = "rg-${local.project_name}-tfstate"
-    storage_account_name = "REPLACE_WITH_BOOTSTRAP_OUTPUT"
+    name = "REPLACE_WITH_BOOTSTRAP_STORAGE_ACCOUNT"
     container_name       = "tfstate"
     key                  = "${path_relative_to_include()}/terraform.tfstate"
   }

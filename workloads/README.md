@@ -7,16 +7,36 @@ Sample Kubernetes workloads for testing AKS cluster functionality.
 ### Hello World (`helloworld/`)
 
 Basic nginx deployment to verify:
+
 - Pod scheduling and networking
 - Service creation and discovery
 - Ingress configuration with AGIC
 
+### Echo Server (`echo-server/`)
+
+Simple HTTP echo server for testing:
+
+- Network connectivity and routing
+- Ingress controller functionality
+- Request/response debugging
+- Uses `hashicorp/http-echo` container
+
 ### Secret Demo (`secret-demo/`)
 
 Demonstrates Azure integrations:
+
 - Azure AD Workload Identity
 - Azure Key Vault integration via Secrets Store CSI Driver
 - Secure secret mounting without storing credentials in cluster
+
+### Stress Test (`stress-test/`)
+
+Load testing workload to trigger autoscaling:
+
+- Forces high CPU and memory usage
+- Tests Horizontal Pod Autoscaler (HPA)
+- Validates cluster node autoscaling
+- Uses `colinianking/stress-ng` container with HPA configuration
 
 ## Prerequisites
 
@@ -33,8 +53,15 @@ Before deploying workloads:
 # Deploy simple hello world
 kubectl apply -f helloworld/deployment.yaml
 
-# Verify deployment
-kubectl get pods,svc,ingress -l app=helloworld
+# Deploy echo server for testing
+kubectl apply -f echo-server/deployment.yaml
+
+# Deploy stress test (will trigger autoscaling)
+kubectl apply -f stress-test/deployment.yaml
+
+# Verify deployments
+kubectl get pods,svc,ingress
+kubectl get hpa  # Check horizontal pod autoscaler status
 ```
 
 ## Advanced Features

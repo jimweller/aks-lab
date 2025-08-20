@@ -7,7 +7,7 @@ This document outlines the migration of a Kubernetes lab from AWS EKS to Azure A
 ## 2. Summary of Decisions
 
 | Feature | AWS EKS Equivalent | Azure AKS Choice & Rationale |
-| :--- | :--- | :--- |
+|---------|-------------------|------------------------------|
 | **Networking** | VPC CNI | **Azure CNI**. Pods get direct VNet IPs, equivalent to VPC CNI. |
 | **Node Autoscaling** | Karpenter / Cluster Autoscaler | **Cluster Autoscaler & Karpenter (NAP mode)**. Start with Cluster Autoscaler, then explore Karpenter for pod-centric scaling. |
 | **Cluster Identity** | IAM Role for Node Group | **Managed Identity**. Simpler and more secure than Service Principals. |
@@ -21,7 +21,7 @@ This document outlines the migration of a Kubernetes lab from AWS EKS to Azure A
 
 ## 3. Proposed `aks-lab` Structure
 
-```
+```text
 aks-lab/
 ├── 1-cluster/            # Terraform for AKS cluster
 ├── 2-kubernetes/         # Kubernetes provider configuration
@@ -38,7 +38,7 @@ aks-lab/
 #### Networking
 
 | Feature | Kubenet | Azure CNI | AWS VPC CNI |
-| :--- | :--- | :--- | :--- |
+|---------|---------|-----------|-------------|
 | **IP Allocation** | Pods get IPs from a separate address space. | Pods get IPs from the VNet. | Pods get IPs from the VPC. |
 | **Performance** | Extra hop adds latency. | Direct connectivity. | Direct connectivity. |
 | **Network Policies** | Calico supported. | Azure Network Policies supported. | Calico supported. |
@@ -48,7 +48,7 @@ aks-lab/
 #### Node Autoscaling
 
 | Feature | Cluster Autoscaler (AKS) | Karpenter (EKS/AKS) |
-| :--- | :--- | :--- |
+|---------|--------------------------|---------------------|
 | **Provisioning** | Node pool-based. | Pod-spec-based. |
 | **Node Diversity** | Limited to node pool instance types. | Can provision varied instance types. |
 | **Speed** | Slower. | Faster. |
@@ -58,7 +58,7 @@ aks-lab/
 #### Storage
 
 | Type | AWS EKS | Azure AKS |
-| :--- | :--- | :--- |
+|------|---------|-----------|
 | **Block** | EBS | Azure Managed Disks |
 | **File** | EFS | Azure Files |
 | **Object** | S3 | Azure Blob Storage |
@@ -69,7 +69,7 @@ aks-lab/
 #### Container Registry
 
 | Feature | ECR | ACR |
-| :--- | :--- | :--- |
+|---------|-----|-----|
 | **Authentication** | IAM-based. | Managed Identity-based via cluster attach. |
 | **Scanning** | Amazon Inspector. | Microsoft Defender for Cloud. |
 
@@ -80,7 +80,7 @@ aks-lab/
 #### Cluster Identity
 
 | Feature | Service Principal | Managed Identity |
-| :--- | :--- | :--- |
+|---------|-------------------|------------------|
 | **Management** | Manual secret lifecycle. | Azure-managed. |
 | **Security** | Secret stored in cluster. | No manageable secrets. |
 
@@ -89,7 +89,7 @@ aks-lab/
 #### Pod-Level Identity
 
 | Feature | EKS Pod Identity | AWS IRSA (Legacy) | Azure AD Workload Identity | Azure AD Pod Identity (Legacy) |
-| :--- | :--- | :--- | :--- | :--- |
+|---------|------------------|-------------------|----------------------------|-------------------------------|
 | **Mechanism** | EKS add-on. | OIDC + webhook. | OIDC + webhook. | Intercepts metadata calls. |
 | **Management** | Managed EKS feature. | Manual OIDC setup. | Managed AKS feature. | Deprecated. |
 
@@ -100,7 +100,7 @@ aks-lab/
 #### Ingress, Certificates, and Secrets
 
 | Feature | AWS EKS | Azure AKS |
-| :--- | :--- | :--- |
+|---------|---------|-----------|
 | **Ingress** | AWS Load Balancer Controller | AGIC |
 | **Certificates** | ACM | cert-manager + Let's Encrypt + Key Vault |
 | **Secrets** | Secrets Manager + ASCP | Key Vault + Secrets Store CSI Driver |

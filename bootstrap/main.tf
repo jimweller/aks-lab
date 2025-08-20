@@ -3,7 +3,7 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 3.0"
+      version = "~> 4.0"
     }
     random = {
       source  = "hashicorp/random"
@@ -14,13 +14,7 @@ terraform {
 
 provider "azurerm" {
   features {}
-}
-
-# Generate a random token for unique resource naming
-resource "random_string" "token" {
-  length  = 4
-  special = false
-  upper   = false
+  subscription_id = "ec285aeb-6f1f-4a4b-8055-95a54af4f1b0"
 }
 
 # Generate a random token for unique resource naming
@@ -73,6 +67,7 @@ resource "azurerm_storage_account" "tfstate" {
 
 # Create container for Terraform state files
 resource "azurerm_storage_container" "tfstate" {
-  name                  = var.tfstate_container_name
+  name                 = var.tfstate_container_name
+  storage_account_id   = azurerm_storage_account.tfstate.id
   container_access_type = "private"
 }

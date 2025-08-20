@@ -9,7 +9,7 @@ This lab provides a modular approach to deploying and experimenting with AKS clu
 ## Architecture
 
 - **Networking**: Azure CNI with dedicated subnets for AKS nodes and Application Gateway
-- **Identity**: Managed Identity for cluster, Azure AD Workload Identity for pods  
+- **Identity**: Managed Identity for cluster, Azure AD Workload Identity for pods
 - **Storage**: Azure Managed Disks for persistent volumes
 - **Registry**: Azure Container Registry with cluster attachment
 - **Ingress**: Application Gateway Ingress Controller (AGIC)
@@ -18,7 +18,7 @@ This lab provides a modular approach to deploying and experimenting with AKS clu
 
 ## Structure
 
-```
+```text
 aks-lab/
 ├── terragrunt.hcl          # Root Terragrunt configuration
 ├── bootstrap/              # Bootstrap infrastructure for Terraform state
@@ -41,20 +41,23 @@ aks-lab/
 ## Prerequisites
 
 1. **Azure CLI**: Install and login to Azure
+
    ```bash
    az login
    az account set --subscription <subscription-id>
    ```
 
-2. **Terraform**: Install Terraform >= 1.0
+2. **OpenTofu**: Install OpenTofu >= 1.0
+
    ```bash
    # macOS
-   brew install terraform
+   brew install opentofu
    
-   # Or download from: https://www.terraform.io/downloads
+   # Or download from: https://opentofu.org/docs/intro/install/
    ```
 
 3. **Terragrunt**: Install Terragrunt
+
    ```bash
    # macOS
    brew install terragrunt
@@ -63,6 +66,7 @@ aks-lab/
    ```
 
 4. **kubectl**: Install kubectl for cluster interaction
+
    ```bash
    # macOS
    brew install kubernetes-cli
@@ -80,20 +84,20 @@ First, deploy the Terraform state storage infrastructure using the bootstrap con
 # Navigate to bootstrap directory
 cd bootstrap
 
-# Initialize Terraform
-terraform init
+# Initialize OpenTofu
+tofu init
 
 # Review the planned changes
-terraform plan
+tofu plan
 
 # Deploy the storage infrastructure
-terraform apply
+tofu apply
 
 # Note the storage account name and other outputs
-terraform output
+tofu output
 
 # Backup bootstrap state to storage account (recommended for teams)
-STORAGE_ACCOUNT_NAME=$(terraform output -raw storage_account_name)
+STORAGE_ACCOUNT_NAME=$(tofu output -raw name)
 az storage blob upload \
   --account-name $STORAGE_ACCOUNT_NAME \
   --container-name tfstate \
@@ -102,30 +106,33 @@ az storage blob upload \
 ```
 
 The bootstrap process creates:
-- Resource Group for Terraform state storage
+
+- Resource Group for OpenTofu state storage
 - Storage Account with versioning and security features
 - Storage Container for state files
 
 **Important Notes:**
-1. The bootstrap Terraform state is stored locally in `bootstrap/terraform.tfstate`
+
+1. The bootstrap OpenTofu state is stored locally in `bootstrap/terraform.tfstate`
 2. A backup copy is stored in the storage account at `bootstrap/terraform.tfstate` for team access
 3. You need to update the main `terragrunt.hcl` with the storage account name from bootstrap output
 
 ### 2. Update Backend Configuration
 
-After bootstrap completes, update the storage account name in the root `terragrunt.hcl`:
+After bootstrap completes, update only the storage account name in the root `terragrunt.hcl`:
 
 ```bash
-# Get the storage account name from bootstrap output
+# Get storage account name from bootstrap output
 cd bootstrap
-STORAGE_ACCOUNT_NAME=$(terraform output -raw storage_account_name)
-echo "Update terragrunt.hcl with: $STORAGE_ACCOUNT_NAME"
+STORAGE_ACCOUNT_NAME=$(tofu output -raw name)
+echo "Storage Account: $STORAGE_ACCOUNT_NAME"
 
 # Go back to root and update terragrunt.hcl
 cd ..
-# Replace REPLACE_WITH_BOOTSTRAP_OUTPUT with the actual storage account name
-sed -i "s/REPLACE_WITH_BOOTSTRAP_OUTPUT/$STORAGE_ACCOUNT_NAME/g" terragrunt.hcl
+sed -i "s/REPLACE_WITH_BOOTSTRAP_STORAGE_ACCOUNT/$STORAGE_ACCOUNT_NAME/g" terragrunt.hcl
 ```
+
+**Note**: The deploy_token is automatically generated once per environment and stored in OpenTofu state for consistency across runs. All resources within an environment share the same generated token.
 
 ### 3. Deploy Infrastructure
 
@@ -139,7 +146,7 @@ terragrunt apply
 
 # Deploy ACR
 cd ../acr
-terragrunt plan  
+terragrunt plan
 terragrunt apply
 
 # Deploy AKS cluster
@@ -151,12 +158,14 @@ terragrunt apply
 ### 4. Connect to Cluster
 
 ```bash
-# Get cluster credentials
-az aks get-credentials --resource-group rg-dev-aks-lab --name dev-aks-cluster
+# Get cluster credentials (use your actual deploy token)
+az aks get-credentials --resource-group rg-aks-lab-dev-z1a2b --name aks-cluster-dev-z1a2b
 
 # Verify connection
 kubectl get nodes
 ```
+
+**Note**: Replace `z1a2b` with your actual deploy token from the bootstrap output.
 
 ## Usage
 
@@ -177,7 +186,7 @@ cd live/dev/networking
 terragrunt apply
 
 # Deploy only AKS cluster
-cd live/dev/aks-cluster  
+cd live/dev/aks-cluster
 terragrunt apply
 ```
 
@@ -194,15 +203,17 @@ terragrunt run-all destroy
 ### Networking Module
 
 Creates:
+
 - Resource Group
 - Virtual Network
 - AKS subnet
-- Application Gateway subnet  
+- Application Gateway subnet
 - Network Security Groups
 
 ### AKS Cluster Module
 
 Creates:
+
 - User Assigned Managed Identity
 - AKS cluster with Azure CNI
 - RBAC role assignments
@@ -210,6 +221,7 @@ Creates:
 ### ACR Module
 
 Creates:
+
 - Azure Container Registry
 - Network rules and policies
 - Private endpoint support
@@ -229,7 +241,7 @@ After deploying the basic infrastructure:
 
 ### Common Issues
 
-1. **Terraform State Issues**: Ensure Azure storage account exists and you have proper permissions
+1. **OpenTofu State Issues**: Ensure Azure storage account exists and you have proper permissions
 2. **AKS Permissions**: Verify your Azure account has Contributor role on the subscription
 3. **Subnet Issues**: Check that subnet CIDRs don't overlap and have sufficient IP space
 4. **ACR Integration**: Ensure AKS managed identity has AcrPull role on the registry
@@ -245,7 +257,7 @@ terragrunt run-all destroy
 
 # Destroy the bootstrap infrastructure (optional)
 cd ../../bootstrap
-terraform destroy
+tofu destroy
 
 # Note: The bootstrap terraform.tfstate file will remain locally
 # Remove manually if desired, or commit to version control for team use

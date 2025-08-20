@@ -5,7 +5,7 @@ A simple nginx deployment to verify basic AKS functionality.
 ## Components
 
 - **Deployment**: nginx container with resource limits
-- **Service**: ClusterIP service for internal access  
+- **Service**: ClusterIP service for internal access
 - **Ingress**: Application Gateway ingress for external access
 
 ## Deploy
@@ -35,3 +35,4 @@ curl http://localhost:8080
 
 ```bash
 kubectl delete -f deployment.yaml
+

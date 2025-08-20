@@ -11,7 +11,7 @@ variable "location" {
 }
 
 variable "tfstate_resource_group_name" {
-  description = "Name of the resource group for Terraform state storage"
+  description = "Name of the resource group for Terraform state storage (without deploy_token suffix)"
   type        = string
   default     = "rg-jim-aks-lab-tfstate"
 }
@@ -32,8 +32,17 @@ variable "tags" {
   description = "A map of tags to add to all resources"
   type        = map(string)
   default = {
+    # Original tags
     project    = "aks-lab"
     managed_by = "terraform"
     purpose    = "tfstate-backend"
+    
+    # MCG mandatory tags
+    Application  = "aks-lab"
+    BusinessUnit = "Technology"
+    CostCenter   = "IT-Infrastructure"
+    ServiceTeam  = "Platform-Engineering"
+    Environment  = "Development"
+    Product      = "AKS-Lab"
   }
 }
